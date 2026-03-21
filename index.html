@@ -142,12 +142,12 @@
     
     <script>
         // Function to show error state (404)
-        function showError(consoleError) {
+        function showError(error) {
             const box = document.getElementById('mainBox');
             const footer = document.getElementById('footer');
             
-            // Log actual error to console devtools
-            console.error('404:', consoleError);
+            // Log the actual error to console (no editing)
+            console.error(error);
             
             // Change box content to 404 error
             box.innerHTML = `
@@ -155,8 +155,8 @@
                 <div class="error-text">Something went wrong while loading videos. Try again later :(</div>
             `;
             
-            // Update footer with devtools hint
-            footer.innerHTML = `console devtools error (actual): ${consoleError}`;
+            // Update footer with the actual error message (no editing)
+            footer.innerHTML = `${error.message`};
             footer.classList.add('footer-error');
         }
         
@@ -174,8 +174,7 @@
             footer.classList.remove('footer-error');
         }
         
-        // Firebase configuration (public config - for demo purposes)
-        // This is a test config, will fail intentionally if not properly set up
+        // Firebase configuration (fake / invalid)
         const firebaseConfig = {
             apiKey: "AIzaSyDummyKeyForTesting123456789",
             authDomain: "flowtube-test.firebaseapp.com",
@@ -185,117 +184,39 @@
             appId: "1:123456789012:web:abcdef1234567890"
         };
         
-        // Flag to track if Firebase loaded successfully
-        let firebaseLoaded = false;
-        let loadTimeout = null;
-        
-        // Try to load Firebase SDK dynamically
-        function loadFirebase() {
-            return new Promise((resolve, reject) => {
-                // Check if Firebase is already loaded
-                if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-                    firebaseLoaded = true;
-                    resolve();
-                    return;
-                }
-                
-                if (typeof firebase !== 'undefined' && firebase.initializeApp) {
-                    try {
-                        firebase.initializeApp(firebaseConfig);
-                        firebaseLoaded = true;
-                        resolve();
-                        return;
-                    } catch(e) {
-                        reject(e);
-                        return;
-                    }
-                }
-                
-                // Load Firebase SDK script
-                const script = document.createElement('script');
-                script.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
-                script.async = true;
-                
-                script.onload = () => {
-                    // Load additional Firebase services if needed (like firestore, etc)
-                    const firestoreScript = document.createElement('script');
-                    firestoreScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
-                    firestoreScript.async = true;
-                    
-                    firestoreScript.onload = () => {
-                        try {
-                            if (typeof firebase !== 'undefined' && firebase.initializeApp) {
-                                firebase.initializeApp(firebaseConfig);
-                                firebaseLoaded = true;
-                                resolve();
-                            } else {
-                                reject(new Error('Firebase loaded but initializeApp not available'));
-                            }
-                        } catch(e) {
-                            reject(e);
-                        }
-                    };
-                    
-                    firestoreScript.onerror = () => {
-                        reject(new Error('Failed to load Firebase Firestore module'));
-                    };
-                    
-                    document.head.appendChild(firestoreScript);
-                };
-                
-                script.onerror = () => {
-                    reject(new Error('Failed to load Firebase SDK script - network error or invalid URL'));
-                };
-                
-                document.head.appendChild(script);
-                
-                // Timeout for loading
-                setTimeout(() => {
-                    if (!firebaseLoaded) {
-                        reject(new Error('Timeout'));
-                    }
-                }, 5000);
-            });
-        }
-        
-        // Test Firebase connection by trying to access a simple operation
-        async function testFirebaseConnection() {
-            try {
-                // Try to get Firestore instance and perform a simple operation
-                if (typeof firebase !== 'undefined' && firebase.firestore) {
-                    const db = firebase.firestore();
-                    // Try to access a collection (will fail with invalid config, but that's the point)
-                    // This will throw if config is invalid
-                    await db.collection('test').limit(1).get().catch((err) => {
-                        // If error is about permissions or missing project, that's fine - Firebase loaded
-                        // We just need to know Firebase API is responsive
-                        if (err.code === 'permission-denied' || err.code === 'failed-precondition' || err.message.includes('not found')) {
-                            // Firebase is working but config may be invalid - still counts as loaded
-                            return true;
-                        }
-                        throw err;
-                    });
-                }
-                return true;
-            } catch(e) {
-                console.warn(':', e.message);
-                // If Firebase is initialized but test fails, still consider it loaded
-                return firebaseLoaded;
-            }
-        }
-        
-        // Initialize Firebase and handle success/error
+        // Load Firebase and verify it works by performing a dummy Firestore operation
         async function initFirebase() {
+            // Helper to load scripts
+            function loadScript(src) {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+                    document.head.appendChild(script);
+                });
+            }
+            
             try {
-                await loadFirebase();
-                await testFirebaseConnection();
-                // Success! Firebase loaded and responding
-                console.log('[FlowTube] loaded');
+                // 1. Load Firebase core and Firestore
+                await loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
+                await loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js');
+                
+                // 2. Initialize with our config
+                const app = firebase.initializeApp(firebaseConfig);
+                
+                // 3. Try to use Firestore – this will fail if config is invalid
+                const db = firebase.firestore();
+                // Perform a dummy read to force Firebase to validate the config
+                await db.collection('_dummy_').limit(1).get();
+                
+                // If we got here, Firebase is working
+                console.log('Firebase loaded and operational');  // Keep it simple, no custom prefix
                 showNormal();
-            } catch(error) {
-                // Firebase failed to load or not found
-                console.error('[FlowTube]', error.message);
-                showError(error.message);
+            } catch (err) {
+                // Any error (loading scripts, init, Firestore operation) triggers 404
+                // Pass the original error object to showError (no editing)
+                showError(err);
             }
         }
         
@@ -322,4 +243,4 @@
         themeColorMeta.content = '#1e88e5';
     </script>
 </body>
-</html>
+    </html>
