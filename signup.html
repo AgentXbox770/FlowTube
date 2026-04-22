@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowTube! - Sign Up</title>
+    <link rel="icon" href="logo.ico" type="image/x-icon">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+        }
+
+        .top-links {
+            text-align: right;
+            padding: 5px;
+            font-size: 11px;
+        }
+
+        .top-links a {
+            color: #0000FF;
+        }
+
+        .header-main {
+            padding: 10px;
+            border-bottom: 1px solid #000000;
+            margin-bottom: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .logo {
+            width: 150px;
+            height: auto;
+        }
+
+        .signup-container {
+            width: 450px;
+            margin: 20px auto;
+            border: 1px solid #808080;
+            padding: 15px;
+            background-color: #f0f0f0;
+        }
+
+        .signup-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-decoration: underline;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 2px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 90%;
+            border: 1px solid #000000;
+        }
+
+        .captcha-box {
+            margin: 15px 0;
+            border: 1px solid #000;
+            background: #f0f0f0;
+            padding: 10px;
+            width: fit-content;
+        }
+
+        canvas {
+            border: 2px solid #000;
+            background-color: #f0f0f0;
+            display: block;
+        }
+
+        .captcha-input {
+            margin-top: 10px;
+            width: 150px !important;
+            background: #fff;
+            color: #000;
+            border: 1px solid #000;
+            font-weight: bold;
+        }
+
+        .error-message {
+            color: red;
+            font-weight: bold;
+            display: none;
+            margin-bottom: 10px;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-links">
+        <a href="index.html">Home</a> | <a href="#">Log In</a> | <a href="#">Help</a>
+    </div>
+
+    <div class="header-main">
+        <a href="index.html"><img src="texture/logo_title.webp" class="logo"></a>
+    </div>
+
+    <div class="signup-container">
+        <div class="signup-title">Register New Account</div>
+        
+        <div id="errorMessage" class="error-message">INVALID VERIFICATION CODE</div>
+
+        <form id="signupForm">
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="username" required>
+            </div>
+
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" required>
+            </div>
+
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="password" required>
+            </div>
+
+            <div class="form-group">
+                <label>Confirm Password:</label>
+                <input type="password" id="confirm_password" required>
+            </div>
+
+            <div class="captcha-box">
+                <label><b>Security Check:</b></label>
+                <canvas id="captchaCanvas" width="250" height="80"></canvas>
+                <input type="text" id="captchaInput" class="captcha-input" placeholder="Type Here" required>
+            </div>
+
+            <input type="submit" value="Sign Up">
+        </form>
+    </div>
+
+    <div class="footer-text">
+        Copyright &copy; 2005 FlowTube Corp.
+    </div>
+
+    <script>
+        const canvas = document.getElementById('captchaCanvas');
+        const ctx = canvas.getContext('2d');
+        let captchaText = "";
+        let offset = 0;
+
+        function getCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
+            let res = '';
+            for (let i = 0; i < 6; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+            return res;
+        }
+
+        function draw() {
+            ctx.fillStyle = "#f0f0f0";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < 40; i++) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.4})`;
+                let size = Math.random() * 60;
+                let x = (Math.sin(offset * 0.08 + i) * 180) + 100;
+                let y = (Math.cos(offset * 0.08 + i) * 60) + 40;
+                ctx.fillRect(x, y, size, size);
+            }
+
+            ctx.font = "bold 34px 'Courier New'";
+            ctx.textBaseline = "middle";
+            
+            for (let i = 0; i < captchaText.length; i++) {
+                let x = 30 + i * 35;
+                let y = 40 + Math.sin(offset * 0.15 + i) * 20;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(Math.sin(offset * 0.1 + i) * 0.5);
+                ctx.fillStyle = `rgba(0, 0, 0, ${0.3 + Math.random() * 0.7})`;
+                ctx.fillText(captchaText[i], 0, 0);
+                ctx.restore();
+            }
+
+            for (let i = 0; i < 1500; i++) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${Math.random()})`;
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1.5, 1.5);
+            }
+
+            for (let i = 0; i < 15; i++) {
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, Math.random() * canvas.height);
+                ctx.lineTo(canvas.width, Math.random() * canvas.height);
+                ctx.stroke();
+            }
+
+            offset += 1;
+            requestAnimationFrame(draw);
+        }
+
+        captchaText = getCode();
+        draw();
+
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const val = document.getElementById('captchaInput').value.toUpperCase();
+            if (val !== captchaText) {
+                e.preventDefault();
+                document.getElementById('errorMessage').style.display = 'block';
+                captchaText = getCode();
+                document.getElementById('captchaInput').value = '';
+            }
+        });
+    </script>
+
+</body>
+</html>
